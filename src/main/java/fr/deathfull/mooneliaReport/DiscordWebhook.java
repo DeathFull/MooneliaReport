@@ -1,4 +1,3 @@
-// java
 package fr.deathfull.mooneliaReport;
 
 import org.jetbrains.annotations.NotNull;
@@ -37,20 +36,42 @@ public class DiscordWebhook {
         return connection;
     }
 
-    public void sendReport(String playerName, String message) throws IOException {
+    public void sendReport(String playerName, String message, String targetPlayer) throws IOException {
         if (webhookUrl == null || webhookUrl.isEmpty() || webhookUrl.contains("YOUR_WEBHOOK")) {
             throw new IOException("Webhook URL non configurée");
         }
 
         JSONObject embed = new JSONObject();
         embed.put("title", "📢 Nouveau Report");
-        embed.put("description", message);
         embed.put("color", 15158332);
         embed.put("timestamp", Instant.now().toString());
 
         JSONObject author = new JSONObject();
         author.put("name", playerName);
+        author.put("icon_url", "https://mc-heads.net/avatar/" + playerName);
         embed.put("author", author);
+
+        JSONArray fields = new JSONArray();
+
+        if (targetPlayer != null) {
+            JSONObject targetField = new JSONObject();
+            targetField.put("name", "🎯 Joueur ciblé");
+            targetField.put("value", targetPlayer);
+            targetField.put("inline", false);
+            fields.add(targetField);
+
+            JSONObject thumbnail = new JSONObject();
+            thumbnail.put("url", "https://mc-heads.net/avatar/" + targetPlayer);
+            embed.put("thumbnail", thumbnail);
+        }
+
+        JSONObject messageField = new JSONObject();
+        messageField.put("name", "📝 Message");
+        messageField.put("value", message);
+        messageField.put("inline", false);
+        fields.add(messageField);
+
+        embed.put("fields", fields);
 
         JSONObject footer = new JSONObject();
         footer.put("text", "MooneliaReport");

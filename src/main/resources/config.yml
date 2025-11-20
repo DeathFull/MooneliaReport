@@ -6,9 +6,19 @@ discord:
   cooldown-seconds: 60
 
 messages:
-  report-sent: "&aVotre report a été envoyé avec succès !"
-  report-error: "&cUne erreur est survenue lors de l'envoi du report."
-  usage: "&cUsage: /report <message>"
+  report-sent: "&a✓ Votre report a été envoyé avec succès !"
+  report-error: "&c✗ Une erreur est survenue lors de l'envoi du report."
   webhook-not-configured: "&cLe webhook Discord n'est pas configuré !"
   # Message affiché lorsqu'un joueur est en cooldown. {seconds} sera remplacé.
-  cooldown: "&cVous devez attendre {seconds} secondes avant de refaire un report."
+  cooldown: "&c⏱ Vous devez attendre &e{seconds} secondes &cavant de refaire un report."
+  # Message d'aide pour l'utilisation de la commande
+  usage-header: "&6&m                    &r &e&lREPORT &6&m                    &r"
+  usage-simple: "&7▸ &e/report &f<message> &8- &7Report simple"
+  usage-target: "&7▸ &e/report &b<joueur> &f<message> &8- &7Cibler un joueur &8(optionnel)"
+  usage-examples: "&6Exemples:"
+  usage-example1: "&7  • &f/report Il y a un bug au spawn"
+  usage-example2: "&7  • &f/report Steve Il utilise des cheats"
+  usage-footer: "&6&m                                              &r"
+  # Message de confirmation avec détails. {target} sera remplacé si présent.
+  report-sent-with-target: "&a✓ Report envoyé concernant &e{target}&a !"
+  report-sent-simple: "&a✓ Report envoyé !"

@@ -36,7 +36,16 @@ public class ReportCommand implements CommandExecutor {
         }
 
         if (args.length == 0) {
-            player.sendMessage(colorize(plugin.getConfig().getString("messages.usage", "&cUsage: /report <message>")));
+            player.sendMessage(colorize(plugin.getConfig().getString("messages.usage-header", "&6&m                    &r &e&lREPORT &6&m                    &r")));
+            player.sendMessage("");
+            player.sendMessage(colorize(plugin.getConfig().getString("messages.usage-simple", "&7▸ &e/report &f<message> &8- &7Report simple")));
+            player.sendMessage(colorize(plugin.getConfig().getString("messages.usage-target", "&7▸ &e/report &b<joueur> &f<message> &8- &7Cibler un joueur &8(optionnel)")));
+            player.sendMessage("");
+            player.sendMessage(colorize(plugin.getConfig().getString("messages.usage-examples", "&6Exemples:")));
+            player.sendMessage(colorize(plugin.getConfig().getString("messages.usage-example1", "&7  • &f/report Il y a un bug au spawn")));
+            player.sendMessage(colorize(plugin.getConfig().getString("messages.usage-example2", "&7  • &f/report Steve Il utilise des cheats")));
+            player.sendMessage("");
+            player.sendMessage(colorize(plugin.getConfig().getString("messages.usage-footer", "&6&m                                              &r")));
             return true;
         }
 
@@ -57,9 +66,25 @@ public class ReportCommand implements CommandExecutor {
             }
         }
 
+        String targetPlayer = null;
+        int messageStartIndex = 0;
+
+        Player firstArgPlayer = plugin.getServer().getPlayer(args[0]);
+        if (firstArgPlayer != null && firstArgPlayer.isOnline()) {
+            targetPlayer = firstArgPlayer.getName();
+            messageStartIndex = 1;
+
+            if (args.length == 1) {
+                player.sendMessage(colorize("&c✗ Vous devez ajouter un message après le nom du joueur !"));
+                player.sendMessage("");
+                player.sendMessage(colorize("&7Exemple: &f/report &b" + targetPlayer + " &fIl triche"));
+                return true;
+            }
+        }
+
         StringBuilder reportMessage = new StringBuilder();
-        for (String arg : args) {
-            reportMessage.append(arg).append(" ");
+        for (int i = messageStartIndex; i < args.length; i++) {
+            reportMessage.append(args[i]).append(" ");
         }
 
         String webhookUrl = plugin.getConfig().getString("discord.webhook-url");
@@ -75,15 +100,31 @@ public class ReportCommand implements CommandExecutor {
         int ticks = Math.max(0, cooldownSeconds) * 20;
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> cooldowns.remove(uuid), ticks);
 
+        String finalTargetPlayer = targetPlayer;
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
                 DiscordWebhook webhook = new DiscordWebhook(webhookUrl);
-                webhook.sendReport(player.getName(), reportMessage.toString().trim());
+                webhook.sendReport(player.getName(), reportMessage.toString().trim(), finalTargetPlayer);
 
-                player.sendMessage(colorize(plugin.getConfig().getString("messages.report-sent",
-                        "&aVotre report a été envoyé avec succès !")));
+                // Message de confirmation différent selon si un joueur est ciblé
+                if (finalTargetPlayer != null) {
+                    String confirmMsg = plugin.getConfig().getString("messages.report-sent-with-target",
+                            "&a✓ Report envoyé concernant &e{target}&a !");
+                    confirmMsg = confirmMsg.replace("{target}", finalTargetPlayer);
+                    player.sendMessage(colorize(confirmMsg));
+                } else {
+                    player.sendMessage(colorize(plugin.getConfig().getString("messages.report-sent-simple",
+                            "&a✓ Report envoyé !")));
+                    // Petit rappel subtil de la possibilité de cibler un joueur
+                    player.sendMessage(colorize("&8💡 Astuce: Vous pouvez cibler un joueur avec &7/report <joueur> <message>"));
+                }
 
-                plugin.getLogger().info("Report envoyé par " + player.getName() + ": " + reportMessage.toString().trim());
+                String logMessage = "Report envoyé par " + player.getName();
+                if (finalTargetPlayer != null) {
+                    logMessage += " concernant " + finalTargetPlayer;
+                }
+                logMessage += ": " + reportMessage.toString().trim();
+                plugin.getLogger().info(logMessage);
 
             } catch (IOException e) {
                 player.sendMessage(colorize(plugin.getConfig().getString("messages.report-error",
