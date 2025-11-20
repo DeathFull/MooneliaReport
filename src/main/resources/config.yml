@@ -2,9 +2,13 @@
 discord:
   # URL du webhook Discord où les reports seront envoyés
   webhook-url: "https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN"
+  # Cooldown entre 2 reports par le même joueur (en secondes)
+  cooldown-seconds: 60
 
 messages:
   report-sent: "&aVotre report a été envoyé avec succès !"
   report-error: "&cUne erreur est survenue lors de l'envoi du report."
   usage: "&cUsage: /report <message>"
   webhook-not-configured: "&cLe webhook Discord n'est pas configuré !"
+  # Message affiché lorsqu'un joueur est en cooldown. {seconds} sera remplacé.
+  cooldown: "&cVous devez attendre {seconds} secondes avant de refaire un report."

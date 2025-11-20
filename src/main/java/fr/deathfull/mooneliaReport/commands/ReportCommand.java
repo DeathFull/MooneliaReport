@@ -12,10 +12,17 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ReportCommand implements CommandExecutor {
 
     private final MooneliaReport plugin;
+
+    private final Map<UUID, Long> cooldowns = new ConcurrentHashMap<>();
 
     public ReportCommand(MooneliaReport plugin) {
         this.plugin = plugin;
@@ -33,6 +40,23 @@ public class ReportCommand implements CommandExecutor {
             return true;
         }
 
+        int cooldownSeconds = plugin.getConfig().getInt("discord.cooldown-seconds", 60);
+        UUID uuid = player.getUniqueId();
+        long now = System.currentTimeMillis();
+        Long lastUse = cooldowns.get(uuid);
+        if (lastUse != null) {
+            long elapsed = now - lastUse;
+            long remainingMs = cooldownSeconds * 1000L - elapsed;
+            if (remainingMs > 0) {
+                long remainingSec = (remainingMs + 999) / 1000;
+                String cooldownMsg = plugin.getConfig().getString("messages.cooldown",
+                        "&cVous devez attendre {seconds} secondes avant de refaire un report.");
+                cooldownMsg = cooldownMsg.replace("{seconds}", String.valueOf(remainingSec));
+                player.sendMessage(colorize(cooldownMsg));
+                return true;
+            }
+        }
+
         StringBuilder reportMessage = new StringBuilder();
         for (String arg : args) {
             reportMessage.append(arg).append(" ");
@@ -46,6 +70,10 @@ public class ReportCommand implements CommandExecutor {
             plugin.getLogger().warning("Le webhook Discord n'est pas configuré dans config.yml !");
             return true;
         }
+
+        cooldowns.put(uuid, System.currentTimeMillis());
+        int ticks = Math.max(0, cooldownSeconds) * 20;
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> cooldowns.remove(uuid), ticks);
 
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
@@ -62,7 +90,9 @@ public class ReportCommand implements CommandExecutor {
                         "&cUne erreur est survenue lors de l'envoi du report.")));
 
                 plugin.getLogger().severe("Erreur lors de l'envoi du webhook Discord: " + e.getMessage());
-                e.printStackTrace();
+                StringWriter sw = new StringWriter();
+                e.printStackTrace(new PrintWriter(sw));
+                plugin.getLogger().severe(sw.toString());
             }
         });
 
